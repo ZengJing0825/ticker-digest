@@ -1,7 +1,8 @@
-"""ticker-digest: an event-driven watchlist digest agent.
+"""ticker-digest: an event-driven watchlist / opinion / portfolio digest engine.
 
-No event, no message: the agent only writes a digest when a rule fires,
-survives frequency caps and de-duplication, and passes the output contract.
+No event, no message: a digest is written only when a rule fires, survives
+the slice's caps and the escalation-aware dedupe, and passes the output
+contract. Signals -> slices -> ranking -> rendering -> delivery -> audit.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

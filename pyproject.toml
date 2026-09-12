@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ticker-digest"
-version = "0.1.0"
-description = "Event-driven watchlist digest: no event, no message."
+version = "0.2.0"
+description = "Event-driven watchlist / opinion / portfolio digest: no event, no message."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Jing Zeng" }]
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = ["PyYAML>=6.0", "requests>=2.31"]
-keywords = ["watchlist", "digest", "signals", "markdown", "agent"]
+keywords = ["watchlist", "portfolio", "digest", "signals", "markdown", "agent"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -30,4 +30,4 @@ packages = ["digest", "digest.sources"]
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py39"
