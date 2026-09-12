@@ -1,0 +1,7 @@
+# SYNTHETIC earnings calendar for the sample data set; dates are fictional.
+ticker,date
+AMD,2026-09-16
+MSFT,2026-09-17
+TSLA,2026-10-21
+AAPL,2026-10-29
+NVDA,2026-11-18

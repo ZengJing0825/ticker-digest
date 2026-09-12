@@ -1,0 +1,18 @@
+# runtime artefacts
+out/
+state/
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.DS_Store

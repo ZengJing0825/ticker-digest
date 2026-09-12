@@ -1,0 +1,21 @@
+# Watchlist for ticker-digest. Positions are optional; thresholds and policy
+# fall back to the defaults in digest/config.py when omitted.
+tickers: [AAPL, NVDA, TSLA, MSFT, AMD, BTC-USD]
+
+positions:            # synthetic demo positions, not real holdings
+  NVDA: {qty: 40, avg_cost: 100.0}
+  TSLA: {qty: 10, avg_cost: 300.0}
+
+thresholds:
+  move_pct: 5.0          # abs daily close-to-close move, in percent
+  volume_multiple: 2.0   # volume vs trailing 20-day average
+  volume_window: 20
+  week52_window: 252     # sessions that define the 52-week range
+  earnings_days: 7       # flag earnings within N calendar days
+  pnl_pct: 20.0          # flag unrealized P&L crossing +/-N%
+  concentration_pct: 40  # flag a position above N% of tracked portfolio value
+
+policy:
+  max_signals_per_ticker: 2   # per ticker per day
+  max_tickers_per_digest: 3
+  dedupe_days: 7
