@@ -1,6 +1,6 @@
 # ticker-digest
 
-An event-driven push engine: one set of signals, sliced into a watchlist digest, an opinion digest and a portfolio digest. Quiet when nothing happens, plain language when something does. The default demo runs fully offline on bundled synthetic data.
+An event-driven push engine for **US-equity and crypto watchlists and portfolios**: one set of signals, sliced into a watchlist digest, an opinion digest and a portfolio digest. Quiet when nothing happens, plain language when something does. Scope: watchlist and portfolio alerts for an individual or a small team; real-time triggers cover US equities and crypto only, other markets (HK, JP, KR) run on earnings and catalyst calendars. The default demo runs fully offline on bundled synthetic data.
 
 > Not investment advice. All sample data is synthetic (prices, calendar, positions and the voice handles are fictional); the tool only reports rule-triggered facts.
 
