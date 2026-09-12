@@ -3,9 +3,13 @@
 The series are geometric random walks with a few engineered bars so that the
 fixture demo on 2026-09-12 produces a known set of candidate signals:
 
-  AAPL  +6.2% close and 3.2x volume on the last session
-  NVDA  new 52-week high; position P&L crosses +20%; >40% concentration
-  AMD   earnings in 4 days      MSFT  earnings in 5 days
+  AAPL     +6.2% close on 3.2x volume (volume spike folded into the move), with a note from a fictional voice (-> material)
+  NVDA     new 52-week high; position P&L crosses +20%; >40% of book "core"; a 2-day-old note
+  AMD      earnings in 4 days      MSFT  earnings in 5 days (plus a preview note)
+  0700.HK  earnings in 3 days on a calendar-only market
+  BTC-USD  a scheduled catalyst in 6 days
+
+Voices in data/voices.csv are FICTIONAL handles; the notes are invented.
 
 Run from the repository root:  python3 scripts/make_sample_data.py
 """
@@ -78,8 +82,8 @@ def build(ticker: str, rng: random.Random) -> list[tuple[date, float, float, flo
         closes[-1] = closes[-2] * 1.062                    # +6.2% daily move
         keep_inside_range(closes)
     elif ticker == "NVDA":
-        scale = 116.5 / closes[-3]                           # normalise, then cap the prior range
-        closes = [min(c * scale, 119.0) for c in closes[:-2]] + [118.0, 120.48]
+        scale = 119.0 / max(closes[:-2])                     # prior range tops out exactly at 119.0
+        closes = [c * scale for c in closes[:-2]] + [118.0, 120.48]
     else:
         closes[-1] = closes[-2] * (1 + rng.uniform(-0.01, 0.01))  # quiet last session
         keep_inside_range(closes)
@@ -110,16 +114,39 @@ def main() -> None:
         lines += [f"{d},{o},{h},{lo},{c},{v}\n" for d, o, h, lo, c, v in build(ticker, rng)]
         (DATA / "sample" / f"{ticker}.csv").write_text("".join(lines))
     (DATA / "earnings_calendar.csv").write_text(
-        "# SYNTHETIC earnings calendar for the sample data set; dates are fictional.\n"
-        "ticker,date\nAMD,2026-09-16\nMSFT,2026-09-17\nTSLA,2026-10-21\nAAPL,2026-10-29\nNVDA,2026-11-18\n"
+        "# SYNTHETIC calendar for the sample data set; dates and events are fictional.\n"
+        "ticker,date,kind,note\n"
+        "AMD,2026-09-16,earnings,\n"
+        "MSFT,2026-09-17,earnings,\n"
+        "0700.HK,2026-09-15,earnings,\n"
+        "BTC-USD,2026-09-18,protocol,scheduled network upgrade\n"
+        "TSLA,2026-10-21,earnings,\n"
+        "AAPL,2026-10-29,earnings,\n"
+        "NVDA,2026-11-18,earnings,\n"
+        "7203.T,2026-11-05,earnings,\n"
+    )
+    (DATA / "voices.csv").write_text(
+        "# SYNTHETIC notes from FICTIONAL handles. Not real people, not real opinions.\n"
+        "date,voice,ticker,headline,link\n"
+        "2026-09-11,@ledger_owl,AAPL,Supplier channel note points to a larger-than-usual unit order; "
+        "watching whether it shows in the next report,link n/a\n"
+        "2026-09-11,@ledger_owl,MSFT,Earnings preview for 2026-09-17: the open question is cloud backlog conversion,link n/a\n"
+        "2026-09-10,@quiet_compounder,NVDA,Weekly note: position sizing revisited after the run; thesis unchanged,"
+        "https://example.com/notes/quiet-compounder/2026-09-10\n"
+        "2026-09-09,@macro_sparrow,BTC-USD,Stablecoin supply growth as a liquidity read; nothing new this week,link n/a\n"
+        "2026-08-30,@quiet_compounder,TSLA,Delivery mix note (older than the note window),link n/a\n"
     )
     # Self-check: the engineered scenario must hold under the package's own rules.
-    fired = sorted((s.ticker, s.rule) for s in evaluate(load_config(ROOT / "watchlist.yaml"), FixtureSource(DATA), END) if s.fired)
-    expected = sorted([("AAPL", "daily_move"), ("AAPL", "volume_spike"), ("NVDA", "week52_high"),
-                       ("NVDA", "pnl_cross"), ("NVDA", "concentration"), ("AMD", "earnings_soon"),
-                       ("MSFT", "earnings_soon")])
+    fired = sorted((s.subject, s.rule) for s in evaluate(load_config(ROOT / "watchlist.yaml"), FixtureSource(DATA), END) if s.fired)
+    expected = sorted([("AAPL", "daily_move"), ("AAPL", "voice_take"),
+                       ("NVDA", "week52_high"), ("NVDA", "pnl_cross"), ("NVDA", "concentration"), ("NVDA", "voice_take"),
+                       ("AMD", "earnings_soon"), ("MSFT", "earnings_soon"), ("MSFT", "voice_take"),
+                       ("0700.HK", "earnings_soon"), ("BTC-USD", "catalyst_soon")])
     assert fired == expected, f"scenario drifted:\n got {fired}\n want {expected}"
-    print(f"wrote {len(SPECS)} synthetic series + earnings calendar to {DATA}; scenario verified")
+    material = [s for s in evaluate(load_config(ROOT / "watchlist.yaml"), FixtureSource(DATA), END)
+                if s.subject == "AAPL" and s.rule == "daily_move"]
+    assert material and material[0].grade == "material", "AAPL move must be graded material"
+    print(f"wrote {len(SPECS)} synthetic series + calendar + voices to {DATA}; scenario verified")
 
 
 if __name__ == "__main__":

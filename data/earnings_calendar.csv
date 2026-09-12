@@ -1,7 +1,10 @@
-# SYNTHETIC earnings calendar for the sample data set; dates are fictional.
-ticker,date
-AMD,2026-09-16
-MSFT,2026-09-17
-TSLA,2026-10-21
-AAPL,2026-10-29
-NVDA,2026-11-18
+# SYNTHETIC calendar for the sample data set; dates and events are fictional.
+ticker,date,kind,note
+AMD,2026-09-16,earnings,
+MSFT,2026-09-17,earnings,
+0700.HK,2026-09-15,earnings,
+BTC-USD,2026-09-18,protocol,scheduled network upgrade
+TSLA,2026-10-21,earnings,
+AAPL,2026-10-29,earnings,
+NVDA,2026-11-18,earnings,
+7203.T,2026-11-05,earnings,

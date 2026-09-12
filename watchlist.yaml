@@ -1,21 +1,44 @@
-# Watchlist for ticker-digest. Positions are optional; thresholds and policy
-# fall back to the defaults in digest/config.py when omitted.
-tickers: [AAPL, NVDA, TSLA, MSFT, AMD, BTC-USD]
+# Watchlist for ticker-digest. Everything but `tickers` is optional; thresholds,
+# policy and markets fall back to the defaults in digest/config.py when omitted.
+# All positions and voices in this file are SYNTHETIC demo data.
+tickers: [AAPL, NVDA, TSLA, MSFT, AMD, BTC-USD, 0700.HK, 7203.T]
+
+# Market tiers. Realtime markets run every rule; calendar markets run only the
+# earnings / catalyst rules and get a [calendar-only] badge. The split is about
+# data-source cost (free daily bars exist for US equities and crypto), not about
+# what the engine can do. The market is inferred from the ticker suffix
+# (.HK, .T/.JP, .KS/.KQ/.KR, -USD; anything else is US).
+markets: {US: realtime, CRYPTO: realtime, HK: calendar, JP: calendar, KR: calendar}
 
 positions:            # synthetic demo positions, not real holdings
-  NVDA: {qty: 40, avg_cost: 100.0}
-  TSLA: {qty: 10, avg_cost: 300.0}
+  updated_at: 2026-08-20   # snapshot date; older than policy.positions_stale_days -> footer reminder
+  NVDA: {qty: 40, avg_cost: 100.0, book: core}
+  TSLA: {qty: 10, avg_cost: 300.0, book: core}
+  BTC-USD: {qty: 0.05, avg_cost: 50000.0, book: crypto}
+
+sectors:              # peers used as a "sector proxy" reason for a move
+  semis: [NVDA, AMD]
+  megacap: [AAPL, MSFT]
 
 thresholds:
-  move_pct: 5.0          # abs daily close-to-close move, in percent
-  volume_multiple: 2.0   # volume vs trailing 20-day average
+  move_k: 2.0            # daily move triggers at move_k x the ticker's typical (median) 30-day move
+  typical_window: 30     # sessions in that typical move
+  move_pct: 5.0          # absolute fallback when fewer than typical_window sessions exist
+  volume_multiple: 2.0   # volume vs trailing 20-day average (also required for the move to trigger)
   volume_window: 20
   week52_window: 252     # sessions that define the 52-week range
-  earnings_days: 7       # flag earnings within N calendar days
+  earnings_days: 7       # flag earnings / catalysts within N calendar days
   pnl_pct: 20.0          # flag unrealized P&L crossing +/-N%
-  concentration_pct: 40  # flag a position above N% of tracked portfolio value
+  concentration_pct: 40  # flag a position above N% of its book (books with one position are skipped)
+  note_days: 2           # a voice note is a signal while it is at most N days old
+  reason_days: 2         # a note or calendar event within N days counts as the reason for a move
 
 policy:
-  max_signals_per_ticker: 2   # per ticker per day
-  max_tickers_per_digest: 3
-  dedupe_days: 7
+  max_signals_per_ticker: 2   # per subject (ticker / voice / book) per day
+  max_tickers_per_digest: 3   # groups per digest
+  max_lines_per_digest: 8     # rendered lines; the rest becomes "+N more quiet"
+  dedupe_days: 7              # same fingerprint is not repeated inside this window ...
+  escalation_pp: 1.5          # ... unless it worsened by at least this many points
+  min_interval_minutes: 55    # ... and this long has passed since the last push
+  escalation_window_hours: 1  # same-topic burst guard window
+  positions_stale_days: 14    # older snapshot -> "positions last updated N days ago" footer
