@@ -1,30 +1,24 @@
 # ticker-digest
 
-An event-driven push engine for **US-equity and crypto watchlists and portfolios**: one set of signals, sliced into a watchlist digest, an opinion digest and a portfolio digest. Quiet when nothing happens, plain language when something does. Scope: watchlist and portfolio alerts for an individual or a small team; real-time triggers cover US equities and crypto only, other markets (HK, JP, KR) run on earnings and catalyst calendars. The default demo runs fully offline on bundled synthetic data.
+[中文](README.zh.md)
 
-> Not investment advice. All sample data is synthetic (prices, calendar, positions and the voice handles are fictional); the tool only reports rule-triggered facts.
+An event-driven alert engine for **US-equity and crypto investors**.
 
-## What problem it solves / who it is for
+**When it applies.** Some investors do not watch the tape all day; they act when something happens: an earnings release, a one-day jump or drop, an open position crossing a stop line, a note from an account they follow. What they want is not a daily market summary but "speak only when there is a reason, stay quiet otherwise". That is what this repository does: it turns a watchlist, a set of positions and a list of followed accounts into one set of signals, pushes one short sourced digest only when an event fires, and folds every other name into a single "N quiet" line.
 
-**The problem.** Most watchlist and portfolio "daily digests" are market-data aggregations: one per day, one paragraph per ticker, sent whether or not anything happened. They fail in two ways: they are late (by the time you read it, systematic traders have already moved), and they are too frequent (users mute them). This repository turns the digest into a push engine: only content that trips a rule, survives the caps and the dedupe, and passes the output contract gets written; every other name is folded into a single `+N more quiet` line.
+**Who it is for.** Individual investors who keep their own watchlist and positions; product and content people building alert-style pushes who want "what to push, what not to push, and why not" working before anything else; developers who want to plug in their own data source.
 
-**Who it is for.** Individual investors who maintain their own watchlist/positions and want something that only speaks when there is a reason; product and content people building alert-style pushes who want to get "what to push, what not to push, and why not" working before anything else; developers who want to extend the rules on their own data source. It is not a market dashboard and it does not connect to a broker for orders; every output is Markdown with a source and a data date.
+**Scope and limits.** Real-time triggers cover US equities and crypto only; HK, JP, KR and other markets run on earnings and catalyst calendars. It is not a market dashboard, it does not place orders with a broker, and it gives no buy or sell advice. The default demo runs fully offline; prices, calendars, positions and account handles are all synthetic.
 
-## Core logic
+## Five ways it differs from an ordinary market digest
 
-This repository is a from-scratch, generalised rewrite of what I worked out while building a "watchlist and portfolio daily digest" at my previous company. It is not a market dashboard; it is a push engine that "shuts up when nothing happens and speaks plainly when something does".
+A broker's or market app's "daily digest" is an aggregation: one per day, one paragraph per ticker, sent whether or not anything happened. It fails in two ways: late (by the time you read it, systematic traders have already moved) and too frequent (users mute it). This engine does the opposite in five places:
 
-**Purpose.** The value of a digest is not aggregation; it is timeliness and "helping you think about the next step". Once a push is late, systematic traders have already moved the price; once pushes get too dense, users simply mute them. So the first principle is: no event, no push. The second is an attention budget: at most 2 items per ticker per day, at most 3 tickers per digest.
-
-**Architecture.** Signals → slices → ranking → rendering → delivery → audit. The signal layer only produces candidates, each with its threshold check and a fingerprint; the same batch of candidates can be sliced by ticker into a watchlist digest, by position into a portfolio digest, or by person into an opinion digest. This is the abstraction I most wanted to keep: one set of signals, many slices, without writing a separate scraper for each kind of digest.
-
-**Why the ranking works this way.** With positions, rank by weight times move, and put risk lines (P&L crossing, concentration) ahead of pure price; without positions, rank by event priority. Freshness comes from fingerprint dedupe: the same thing is not repeated within 7 days and is only re-pushed when it gets worse.
-
-**Why the rendering works this way.** First a one-line net read, then one line per ticker: judgment, why, what to watch, source. No buy/sell, no price targets, no technical-indicator jargon; every item must carry its source and data date; the LLM only polishes, the rewrite is re-checked against the same contract, and if it fails we fall back to the template. Every one of these rules was paid for with a mistake: when the prototype went live the output was unstable, the screen filled with tool narration, and splitting sections by dimension made the same ticker show up repeatedly. In the end this was solved by a "hard gate before sending", not by prompt wording.
-
-**Trade-offs.** Realtime triggers only cover US equities and crypto; other markets only go through the earnings and catalyst calendar. The reason is not technical: realtime market data for those markets is too expensive. Of the three ways to connect positions (manual entry, screenshot, broker link), the first two are static snapshots, so at the right moment the user has to be reminded that "this item used positions from 14 days ago".
-
-**Process numbers (my raw notes).** In the prototype phase I measured 5 highly repetitive alerts pushed within one hour, and 16 pushes against 3 silences in a day, before adding "re-push the same topic only when it worsens, plus a minimum interval". In the ad data, digest-style aggregation pages had the lowest conversion, which says the digest is the baseline and realtime single pushes are the selling point.
+1. **No event, no push, and an attention budget.** Only content that trips a threshold, survives the caps and the dedupe, and passes the output contract gets written; at most 2 items per ticker per day and 3 tickers per digest, everything else folded into one `+N more quiet` line. On a day with no push, the audit file says why.
+2. **One set of signals, many slices.** The same batch of candidates is sliced by ticker into a watchlist digest, by book into a portfolio digest, by account into an opinion digest, without a separate scraper per digest type.
+3. **Re-push only when it gets worse.** The same event is not repeated within 7 days; it is pushed again only when its severity rises by a step and a minimum interval has passed. Improvement is never a reason to re-push.
+4. **With positions, rank by position.** Risk lines (P&L crossing, concentration) come before pure price, then `weight × move`; only without positions does event priority decide.
+5. **A hard gate before sending; the LLM only polishes.** Every line must carry a source, a data date and a link; advice wording and technical-analysis jargon are forbidden; an LLM rewrite is re-checked against the same contract and falls back to the template on any violation.
 
 ## Quickstart
 
@@ -72,6 +66,38 @@ The opinion digest groups by handle (`## @ledger_owl` followed by the tickers it
 Online mode `--source stooq` fetches free daily CSVs from stooq.com (no key). Stooq has no earnings endpoint, so the calendar still comes from `data/earnings_calendar.csv` (cited as `local-calendar`) and voice notes from `data/voices.csv` (cited as `local-notes`). Any network or payload problem degrades to "no data for that ticker" with a warning (`-v` shows them) rather than an exception. Stooq sometimes serves a browser-verification page to scripted clients; the adapter detects it and reports it honestly, and does not try to work around the check.
 
 LLM polish is enabled automatically when `ANTHROPIC_API_KEY` is set and the `anthropic` package is installed (`pip install -e ".[llm]"`); model `claude-sonnet-5`. `--no-llm` forces template mode. The rewrite is re-validated by the same contract and falls back to the template on API errors or violations.
+
+## How it works
+
+```
+data/ bars · earnings calendar · account notes · positions     watchlist.yaml tickers · books · thresholds · policy
+            │                                                          │
+            ▼                                                          ▼
+1 signals   digest/signals.py    every rule on every ticker; a candidate whether it fired or not (why, fingerprint, severity)
+2 slices    digest/slices.py     group by ticker / account / book; decide the "quiet" universe
+3 ranking   digest/policy.py     risk lines → weight × move → event priority; caps, dedupe, escalation
+4 render    digest/render.py     one net read + one line per ticker; digest/contract.py re-checks as a hard gate
+5 delivery  run / propose+publish  writes out/digest-<date>[-slice].md; the human path proposes first, then publishes ticked items
+6 audit     digest/audit.py      state/audit/<date>.json: every candidate's decision, dedupe hits, why_no_push
+```
+
+`run` goes through 1 to 6; `explain` stops after 3 and prints every candidate's threshold check and policy decision without touching state.
+
+## Design decisions
+
+This repository is a from-scratch, generalised rewrite of what I worked out while building a watchlist and portfolio digest at my previous company. These are the decisions that matter and where they came from.
+
+**Why "one set of signals, many slices".** The signal layer only produces candidates, each with its threshold check and a fingerprint; the same batch can be sliced by ticker, by book or by person into three digests. This is the abstraction I most wanted to keep: the kinds of digest change, the definition of a signal does not, so fetching and rules are written once.
+
+**Why the ranking works this way.** With positions, rank by weight times move and put risk lines ahead of pure price; without positions, rank by event priority. Freshness comes from fingerprint dedupe: the same event is not repeated within 7 days and only re-pushed when it worsens. In the prototype I measured 5 near-identical alerts in one hour and 16 pushes against 3 silences in a day before adding "re-push the same topic only on worsening, plus a minimum interval".
+
+**Why the rendering works this way.** First a one-line net read, then one line per ticker: judgment, why, what to watch, source. No buy or sell, no price targets, no technical-indicator jargon; every item carries its source and data date; the LLM only polishes, the rewrite is re-checked against the same contract, and on failure the template is used. Each rule was paid for with a mistake: when the prototype went live the output was unstable, the screen filled with tool narration, and splitting sections by dimension made the same ticker appear repeatedly. It was solved by a hard gate before sending, not by prompt wording.
+
+**Why not real-time for every market.** Real-time triggers cover US equities and crypto; other markets run on the earnings and catalyst calendar. The reason is cost, not capability: real-time data for those exchanges is expensive. When a market's feed is connected, flip it to `realtime` and no rule changes.
+
+**Position freshness.** Of the three ways to connect positions (manual entry, screenshot, broker link) the first two are static snapshots, so at the right moment the user is told "this item used positions from 14 days ago".
+
+**The digest is the baseline; the single push is the product.** In the ad data, digest-style aggregation pages converted worst. What users actually open a notification for is the one line on the day something happens, not the daily summary. That is why "no event, no push" is the first principle of the whole repository.
 
 ## Signals and thresholds
 
@@ -193,7 +219,11 @@ policy:                       # all optional; defaults shown
 
 Unknown keys (top-level included) raise a `ConfigError`, so a typo cannot silently disable a rule. `data/earnings_calendar.csv` is `ticker,date[,kind,note]`; `data/voices.csv` is `date,voice,ticker,headline,link` (an empty `link` or the literal `link n/a` means no link). Global CLI flags: `--config`, `--state` (default `state/sent.json`), `--audit` (default `state/audit`), `-v`; per-command flags: `--date`, `--now`, `--slice`, `--source`, `--data`, `--out`; `run` / `publish` also take `--no-llm`, and `publish` takes `--approved` and `--dry` (default) / `--send`.
 
-**Adding a source**: subclass `digest.sources.base.DataSource`, implement `daily_bars(ticker, end)` (oldest first, no later than `end`) and `earnings_calendar()`, optionally `notes()`; return an empty list on failure instead of raising; register it in `build_source()` in `digest/cli.py`. **Adding a rule**: write a function in `digest/signals.py` that returns a `Signal` for both the fired and the non-fired case, choose a `priority`, define what identity the `fingerprint` captures, give `severity` a "bigger is worse" magnitude, and call it from `evaluate()`; keep the citation out of `headline` (the renderer adds it) and keep contract-forbidden words out of it, or rendering will refuse.
+## Extending
+
+- **Add a data source**: subclass `digest.sources.base.DataSource`, implement `daily_bars(ticker, end)` (oldest first, no later than `end`) and `earnings_calendar()`, optionally `notes()`; return an empty list on failure instead of raising; register it in `build_source()` in `digest/cli.py`.
+- **Add a rule**: write a function in `digest/signals.py` that returns a `Signal` for both the fired and the non-fired case, choose a `priority`, define what identity the `fingerprint` captures, give `severity` a "bigger is worse" magnitude, and call it from `evaluate()`; keep the citation out of `headline` (the renderer adds it) and keep contract-forbidden words out of it, or rendering will refuse.
+- **Regenerate the sample scenario**: after changing a rule run `scripts/make_sample_data.py`; it rebuilds the data and asserts the demo scenario has not drifted.
 
 ## Layout
 
