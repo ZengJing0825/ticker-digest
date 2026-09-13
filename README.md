@@ -54,7 +54,10 @@ python -m digest explain --date 2026-09-12                # every candidate: thr
 python -m digest reset-state
 ```
 
-The second day produces one line on stdout and no file. On the eventful day the watchlist digest looks like this (template mode):
+The second day produces one line on stdout and no file. The eventful day writes the digest shown in the preview above; the raw Markdown is here for anyone who wants the exact format.
+
+<details>
+<summary>Raw Markdown of the 2026-09-12 watchlist digest (template mode)</summary>
 
 ```
 # Watchlist digest - 2026-09-12
@@ -72,6 +75,8 @@ positions last updated 23 days ago — reconnect or re-enter
 ---
 Not investment advice. Automated summary of market data; verify before acting.
 ```
+
+</details>
 
 The opinion digest groups by handle (`## @ledger_owl` followed by the tickers it mentioned), the portfolio digest groups by book (`## core`, `## crypto`); all three come from the same candidate set. `run` writes `out/digest-<date>[-<slice>].md` (a repeat run on the same day gets a `-2`, `-3` … suffix) and records state. `--date` is the run date; each ticker uses its latest bar on or before that date, so a Saturday run digests Friday's close and cites Friday's date. `--now YYYY-MM-DDTHH:MM` pins the wall clock (dedupe intervals are measured against it), for demos and tests.
 

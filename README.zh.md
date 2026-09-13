@@ -54,7 +54,10 @@ python -m digest explain --date 2026-09-12                # 列出每个候选�
 python -m digest reset-state
 ```
 
-第二天的输出只有一行 stdout，没有文件。有事的那天，自选日报长这样（模板模式）：
+第二天的输出只有一行 stdout，没有文件。有事那天写出的就是上面预览里的那份日报；想要精确格式的可以展开看原文。
+
+<details>
+<summary>2026-09-12 自选日报的 Markdown 原文（模板模式）</summary>
 
 ```
 # Watchlist digest - 2026-09-12
@@ -72,6 +75,8 @@ positions last updated 23 days ago — reconnect or re-enter
 ---
 Not investment advice. Automated summary of market data; verify before acting.
 ```
+
+</details>
 
 观点日报按账号分组（`## @ledger_owl` 下面是它提到的标的），持仓日报按持仓簿分组（`## core`、`## crypto`），三者来自同一批候选。`run` 写 `out/digest-<date>[-<slice>].md`（同日重复运行加 `-2`、`-3` 后缀）并记录状态；`--date` 是运行日期，每个标的取该日期及之前最近一根日线，所以周六运行摘要的是周五收盘，引用的也是周五的日期。`--now YYYY-MM-DDTHH:MM` 可以固定时钟（去重间隔按它算），演示和测试用。
 
