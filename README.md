@@ -8,6 +8,8 @@ An event-driven alert engine for **US-equity and crypto investors**.
 
 **Who it is for.** Individual investors who keep their own watchlist and positions; product and content people building alert-style pushes who want "what to push, what not to push, and why not" working before anything else; developers who want to plug in their own data source.
 
+**What you get.** On a day something happens, one short Markdown digest per slice: a one-line net read, then one line per name that has something - judgment, why, what to watch, source and data date. On a day nothing happens, no file at all and one audit entry saying why. Standard library plus PyYAML and requests; the bundled offline demo runs in seconds on synthetic data.
+
 **Scope and limits.** Real-time triggers cover US equities and crypto only; HK, JP, KR and other markets run on earnings and catalyst calendars. It is not a market dashboard, it does not place orders with a broker, and it gives no buy or sell advice. The default demo runs fully offline; prices, calendars, positions and account handles are all synthetic.
 
 ## What you get (preview)
@@ -106,7 +108,7 @@ This repository is a from-scratch, generalised rewrite of what I worked out whil
 
 **Why "one set of signals, many slices".** The signal layer only produces candidates, each with its threshold check and a fingerprint; the same batch can be sliced by ticker, by book or by person into three digests. This is the abstraction I most wanted to keep: the kinds of digest change, the definition of a signal does not, so fetching and rules are written once.
 
-**Why the ranking works this way.** With positions, rank by weight times move and put risk lines ahead of pure price; without positions, rank by event priority. Freshness comes from fingerprint dedupe: the same event is not repeated within 7 days and only re-pushed when it worsens. In the prototype I measured 5 near-identical alerts in one hour and 16 pushes against 3 silences in a day before adding "re-push the same topic only on worsening, plus a minimum interval".
+**Why the ranking works this way.** With positions, rank by weight times move and put risk lines ahead of pure price; without positions, rank by event priority. Freshness comes from fingerprint dedupe: the same event is not repeated within 7 days and only re-pushed when it worsens. The rule came out of one day of the prototype's own delivery log, running every 15 minutes with no dedupe at all: near-identical alerts inside the same hour, and 16 pushes against 3 quiet runs on that day. "Re-push the same topic only when it worsens, and not before a minimum interval" is what that day bought.
 
 **Why the rendering works this way.** First a one-line net read, then one line per ticker: judgment, why, what to watch, source. No buy or sell, no price targets, no technical-indicator jargon; every item carries its source and data date; the LLM only polishes, the rewrite is re-checked against the same contract, and on failure the template is used. Each rule was paid for with a mistake: when the prototype went live the output was unstable, the screen filled with tool narration, and splitting sections by dimension made the same ticker appear repeatedly. It was solved by a hard gate before sending, not by prompt wording.
 
@@ -114,7 +116,7 @@ This repository is a from-scratch, generalised rewrite of what I worked out whil
 
 **Position freshness.** Of the three ways to connect positions (manual entry, screenshot, broker link) the first two are static snapshots, so at the right moment the user is told "this item used positions from 14 days ago".
 
-**The digest is the baseline; the single push is the product.** In the ad data, digest-style aggregation pages converted worst. What users actually open a notification for is the one line on the day something happens, not the daily summary. That is why "no event, no push" is the first principle of the whole repository.
+**The digest is the baseline; the single push is the product.** Across three months of paid-acquisition data on a related product, digest-style aggregation pages converted worst of every landing type tested. What users actually open a notification for is the one line on the day something happens, not the daily summary. That is why "no event, no push" is the first principle of the whole repository.
 
 ## Signals and thresholds
 
@@ -241,6 +243,16 @@ Unknown keys (top-level included) raise a `ConfigError`, so a typo cannot silent
 - **Add a data source**: subclass `digest.sources.base.DataSource`, implement `daily_bars(ticker, end)` (oldest first, no later than `end`) and `earnings_calendar()`, optionally `notes()`; return an empty list on failure instead of raising; register it in `build_source()` in `digest/cli.py`.
 - **Add a rule**: write a function in `digest/signals.py` that returns a `Signal` for both the fired and the non-fired case, choose a `priority`, define what identity the `fingerprint` captures, give `severity` a "bigger is worse" magnitude, and call it from `evaluate()`; keep the citation out of `headline` (the renderer adds it) and keep contract-forbidden words out of it, or rendering will refuse.
 - **Regenerate the sample scenario**: after changing a rule run `scripts/make_sample_data.py`; it rebuilds the data and asserts the demo scenario has not drifted.
+
+## Out of scope
+
+- **Markets.** Real-time triggers cover US equities and crypto. Every other market runs on the earnings and catalyst calendar until a feed is connected; the rules do not change when one is.
+- **Trading.** No broker connection, no order routing, no portfolio accounting. Positions are an input the engine reads, never something it writes to.
+- **Advice.** No buy or sell calls, no price targets, no technical-indicator readings. The output contract rejects that wording before anything is written, in the template and in an LLM rewrite alike.
+- **Backtesting.** It decides what is worth saying today. It says nothing about whether acting on any past alert would have made money.
+- **Delivery.** The deliverable is a Markdown file under `out/`. Sending it to a chat app, an inbox or a bot is yours to wire; the repository ships no webhook and stores no credentials.
+- **A UI.** Output is Markdown, JSON state and audit files. There is no web page and no notification centre.
+- **Writing the analysis.** The LLM only polishes wording. It never adds a fact, a number or a link, and a rewrite that does is thrown away in favour of the template.
 
 ## Layout
 
