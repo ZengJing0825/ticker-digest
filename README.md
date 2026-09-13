@@ -10,6 +10,18 @@ An event-driven alert engine for **US-equity and crypto investors**.
 
 **Scope and limits.** Real-time triggers cover US equities and crypto only; HK, JP, KR and other markets run on earnings and catalyst calendars. It is not a market dashboard, it does not place orders with a broker, and it gives no buy or sell advice. The default demo runs fully offline; prices, calendars, positions and account handles are all synthetic.
 
+## What you get (preview)
+
+Two runs on the synthetic sample, one quiet day and one eventful day. On the quiet day the command prints one line and writes no file. On the eventful day it writes one Markdown digest: a one-line net read, one line per name that has something (judgment, why, what to watch, source and data date), and the rest folded into "+5 more quiet".
+
+![digest: a quiet day prints one line; an eventful day writes one sourced digest](docs/preview/digest.png)
+
+When you want to know why something was or was not pushed, `explain` lists every rule on every ticker, whether it fired, and what the policy did with it: kept, capped, deduped, or below threshold.
+
+![explain: every candidate with its threshold check and policy decision](docs/preview/explain.png)
+
+The same candidate set can be sliced by account (`--slice person`, grouped under `## @handle`) or by book (`--slice book`, grouped under `## core` / `## crypto`); the Quickstart below runs all three.
+
 ## Five ways it differs from an ordinary market digest
 
 A broker's or market app's "daily digest" is an aggregation: one per day, one paragraph per ticker, sent whether or not anything happened. It fails in two ways: late (by the time you read it, systematic traders have already moved) and too frequent (users mute it). This engine does the opposite in five places:
